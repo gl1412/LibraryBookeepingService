@@ -74,10 +74,3 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 ### Extra Set Up Instructions
 
 Install necessary Babel packages: npm install @babel/core @babel/cli @babel/preset-env @babel/preset-react --save-dev
-
-
-
-
-
-
-
