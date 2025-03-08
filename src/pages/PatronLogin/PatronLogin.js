@@ -10,9 +10,13 @@ const PatronLogin = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // ADD AUTHENTICATION //
-    console.log("Patron login:", { email, password });
-    navigate("/patron-dashboard");
+    // Placeholder account (we will replace with proper backend logic later)
+    if (email === "user@library.com" && password === "password") {
+      localStorage.setItem("patron", email); // Store session
+      navigate("/patron-dashboard"); 
+    } else {
+      alert("Invalid credentials");
+    }
   };
 
   return (

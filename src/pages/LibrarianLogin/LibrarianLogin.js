@@ -10,11 +10,11 @@ const LibrarianLogin = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-     // Placeholder authentication (Replace with backend logic)
+     // This is placeholder authentication ( we can replace with backend logic eventually)
      if (email === "admin@library.com" && password === "password") {
-      localStorage.setItem("librarian", email); // Store session
+      localStorage.setItem("librarian", email); 
       console.log("Navigating to:", "/librarian-dashboard");
-      navigate("/librarian-dashboard"); // Redirect to dashboard
+      navigate("/librarian-dashboard"); 
     } else {
       alert("Invalid credentials");
     }
