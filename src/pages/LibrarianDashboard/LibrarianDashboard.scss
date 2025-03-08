@@ -6,14 +6,14 @@ $navy: #10214d;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start; /* Align content at the top */
-    min-height: 100vh; /* ✅ Fix height issue */
-    width: 100vw; /* Ensure it stretches fully */
+    justify-content: flex-start; 
+    min-height: 100vh; 
+    width: 100vw; 
     background-color: $navy;
     color: $white;
     text-align: center;
     padding: 20px;
-    overflow-y: auto; /* ✅ Allow scrolling */
+    overflow-y: auto; 
   }
 
 .lpl-logo {
@@ -27,16 +27,16 @@ h2 {
   margin-bottom: 20px;
 }
 
-/* Fix container alignment */
+
 .dashboard-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 80%;
-  max-width: 900px; /* Adjust max width */
+  max-width: 900px; 
 }
 
-/* Panels for Overview, Reservations, Rooms */
+
 .overview,
 .reservations,
 .rooms {
@@ -48,7 +48,7 @@ h2 {
   text-align: left;
 }
 
-/* Fix card styling */
+
 .reservation-card,
 .room-card {
   background: rgba(255, 255, 255, 0.2);
