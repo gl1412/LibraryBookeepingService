@@ -10,9 +10,14 @@ const LibrarianLogin = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // ADD AUTHENTICATION //
-    console.log("Librarian login:", { email, password });
-    navigate("/librarian-dashboard");
+     // Placeholder authentication (Replace with backend logic)
+     if (email === "admin@library.com" && password === "password") {
+      localStorage.setItem("librarian", email); // Store session
+      console.log("Navigating to:", "/librarian-dashboard");
+      navigate("/librarian-dashboard"); // Redirect to dashboard
+    } else {
+      alert("Invalid credentials");
+    }
   };
 
   return (

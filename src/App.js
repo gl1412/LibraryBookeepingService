@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage/LandingPage.js";
 import PatronLogin from "./pages/PatronLogin/PatronLogin.js";
 import LibrarianLogin from "./pages/LibrarianLogin/LibrarianLogin.js";
+import LibrarianDashboard from "./pages/LibrarianDashboard/LibrarianDashboard.js";
 import "./App.scss";
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/patron-login" element={<PatronLogin />} />
         <Route path="/librarian-login" element={<LibrarianLogin />} />
+        <Route path="/librarian-dashboard" element={<LibrarianDashboard />} />
       </Routes>
     </Router>
   );

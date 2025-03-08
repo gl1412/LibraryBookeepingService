@@ -1,0 +1,79 @@
+$white: #ffffff;
+$gold: #f0c148;
+$navy: #10214d;
+
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Align content at the top */
+    min-height: 100vh; /* ✅ Fix height issue */
+    width: 100vw; /* Ensure it stretches fully */
+    background-color: $navy;
+    color: $white;
+    text-align: center;
+    padding: 20px;
+    overflow-y: auto; /* ✅ Allow scrolling */
+  }
+
+.lpl-logo {
+  width: 150px;
+  margin-bottom: 15px;
+}
+
+h2 {
+  font-size: 2.5rem;
+  color: $gold;
+  margin-bottom: 20px;
+}
+
+/* Fix container alignment */
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80%;
+  max-width: 900px; /* Adjust max width */
+}
+
+/* Panels for Overview, Reservations, Rooms */
+.overview,
+.reservations,
+.rooms {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  margin: 15px 0;
+  border-radius: 8px;
+  width: 100%;
+  text-align: left;
+}
+
+/* Fix card styling */
+.reservation-card,
+.room-card {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 5px;
+  width: 95%;
+
+  p {
+    margin: 5px 0;
+  }
+
+  button {
+    background-color: $gold;
+    color: $navy;
+    border: none;
+    padding: 10px 15px;
+    margin-right: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background 0.3s;
+
+    &:hover {
+      background-color: darken($gold, 10%);
+    }
+  }
+}
