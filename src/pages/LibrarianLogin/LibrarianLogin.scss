@@ -34,6 +34,7 @@ $navy: #10214d;
     label {
       text-align: left;
       font-weight: bold;
+      margin-bottom: -10px;
     }
 
     input {
@@ -42,7 +43,9 @@ $navy: #10214d;
       border: none;
       border-radius: 5px;
       font-size: 1rem;
+      font-family: "Poppins", sans-serif;
       box-sizing: border-box;
+      margin-bottom: 10px;
     }
 
     button {

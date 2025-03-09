@@ -3,24 +3,18 @@ $gold: #f0c148;
 $navy: #10214d;
 
 .dashboard-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-<<<<<<< HEAD
-    justify-content: flex-start;
-    min-height: 100vh; 
-    width: 100vw;
-=======
-    justify-content: flex-start; 
-    min-height: 100vh; 
-    width: 100vw; 
->>>>>>> d37d769130b8ef9d9711c720672e252cf7fb18e4
-    background-color: $navy;
-    color: $white;
-    text-align: center;
-    padding: 20px;
-    overflow-y: auto; 
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: $navy;
+  color: $white;
+  text-align: center;
+  padding: 20px;
+  overflow-y: auto;
+}
 
 .lpl-logo {
   width: 150px;
@@ -29,19 +23,16 @@ $navy: #10214d;
 
 h2 {
   font-size: 2.5rem;
-  color: $gold;
   margin-bottom: 20px;
 }
-
 
 .dashboard-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 80%;
-  max-width: 900px; 
+  max-width: 900px;
 }
-
 
 .overview,
 .reservations,
@@ -53,7 +44,6 @@ h2 {
   width: 100%;
   text-align: left;
 }
-
 
 .reservation-card,
 .room-card {

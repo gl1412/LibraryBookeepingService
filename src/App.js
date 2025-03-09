@@ -4,6 +4,7 @@ import PatronLogin from "./pages/PatronLogin/PatronLogin.js";
 import PatronDashboard from "./pages/PatronDashboard/PatronDashboard.js";
 import LibrarianLogin from "./pages/LibrarianLogin/LibrarianLogin.js";
 import LibrarianDashboard from "./pages/LibrarianDashboard/LibrarianDashboard.js";
+import FAQ from "./pages/FAQ/FAQ.js";
 import "./App.scss";
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <Route path="/patron-dashboard" element={<PatronDashboard />} />
         <Route path="/librarian-login" element={<LibrarianLogin />} />
         <Route path="/librarian-dashboard" element={<LibrarianDashboard />} />
+        <Route path="/faq" element={<FAQ />} />
       </Routes>
     </Router>
   );

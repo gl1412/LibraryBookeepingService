@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./LibrarianLogin.scss";
-import lplLogo from "../../assets/lpl-icon-white.svg";
+import lplLogo from "../../assets/lpl-icon-yellow.svg";
+import Header from "../../components/Header/Header.js";
+import Footer from "../../components/Footer/Footer.js";
 
 const LibrarianLogin = () => {
   const [email, setEmail] = useState("");
@@ -10,40 +12,45 @@ const LibrarianLogin = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-     // This is placeholder authentication ( we can replace with backend logic eventually)
-     if (email === "admin@library.com" && password === "password") {
-      localStorage.setItem("librarian", email); 
-      console.log("Navigating to:", "/librarian-dashboard");
-      navigate("/librarian-dashboard"); 
+    // This is placeholder authentication ( we can replace with backend logic eventually)
+    if (email === "admin@library.com" && password === "password") {
+      localStorage.setItem("librarian", email);
+      navigate("/librarian-dashboard");
     } else {
       alert("Invalid credentials");
     }
   };
 
   return (
-    <div className="librarian-login-container">
-      <img src={lplLogo} alt="LPL Logo" className="lpl-logo" /> {/* LPL Icon */}
-      <h2>Librarian Login</h2>
-      <form onSubmit={handleLogin}>
-        <label>Email:</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+    <>
+      <Header />
+      <div className="librarian-login-container">
+        <img src={lplLogo} alt="LPL Logo" className="lpl-logo" />
+        <h2>Librarian Login</h2>
+        <form onSubmit={handleLogin}>
+          <label>Email:</label>
+          <input
+            type="email"
+            placeholder="example@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-        <label>Password:</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+          <label>Password:</label>
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
 
-        <button type="submit">Login</button>
-      </form>
-    </div>
+          <button type="submit">Login</button>
+        </form>
+      </div>
+      <Footer />
+    </>
   );
 };
 
