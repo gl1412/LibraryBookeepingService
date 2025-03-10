@@ -20,6 +20,7 @@ $navy: #10214d;
 
   .nav-links {
     display: flex;
+    align-items: center;
     gap: 50px;
 
     .nav-link {
@@ -30,8 +31,24 @@ $navy: #10214d;
       transition: color 0.3s ease;
 
       &:hover {
-        color: darken($navy, 10%);
+        color: darken($navy, 5%);
         text-decoration: underline;
+      }
+    }
+
+    .register-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      color: $white;
+      background-color: $navy;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease-in-out;
+
+      &:hover {
+        background-color: darken($navy, 5%);
       }
     }
   }
