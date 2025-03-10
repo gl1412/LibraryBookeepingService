@@ -2,12 +2,17 @@ $white: #ffffff;
 $gold: #f0c148;
 $navy: #10214d;
 
+.page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
 .landing-container {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: $navy;
   color: $white;
   text-align: center;
   box-sizing: border-box;

@@ -8,7 +8,7 @@ const LandingPage = () => {
   const navigate = useNavigate();
 
   return (
-    <>
+    <div className="page-container">
       <Header />
       <div className="landing-container">
         <main className="content">
@@ -32,7 +32,7 @@ const LandingPage = () => {
         </main>
       </div>
       <Footer />
-    </>
+    </div>
   );
 };
 

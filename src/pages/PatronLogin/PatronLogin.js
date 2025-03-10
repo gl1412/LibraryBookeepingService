@@ -22,7 +22,7 @@ const PatronLogin = () => {
   };
 
   return (
-    <>
+    <div className="page-container">
       <Header />
       <div className="patron-login-container">
         <img src={lplLogo} alt="LPL Logo" className="lpl-logo" />
@@ -36,7 +36,6 @@ const PatronLogin = () => {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-
           <label>Password:</label>
           <input
             type="password"
@@ -55,7 +54,7 @@ const PatronLogin = () => {
         </p>
       </div>
       <Footer />
-    </>
+    </div>
   );
 };
 

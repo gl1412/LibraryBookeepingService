@@ -22,7 +22,7 @@ const LibrarianLogin = () => {
   };
 
   return (
-    <>
+    <div className="page-container">
       <Header />
       <div className="librarian-login-container">
         <img src={lplLogo} alt="LPL Logo" className="lpl-logo" />
@@ -50,7 +50,7 @@ const LibrarianLogin = () => {
         </form>
       </div>
       <Footer />
-    </>
+    </div>
   );
 };
 

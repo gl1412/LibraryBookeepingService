@@ -3,11 +3,9 @@ $gold: #f0c148;
 $navy: #10214d;
 
 .footer {
-  text-align: center;
-  font-size: 1rem;
-  position: fixed;
-  bottom: 0;
-  width: 100%;
+  display: flex;
+  justify-content: center;
+  font-size: 0.8rem;
   color: $white;
-  padding: 10px 0;
+  background-color: $navy;
 }

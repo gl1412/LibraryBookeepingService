@@ -2,13 +2,18 @@ $white: #ffffff;
 $gold: #f0c148;
 $navy: #10214d;
 
+.page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
 .patron-login-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: $navy;
   color: $white;
   text-align: center;
 
@@ -43,14 +48,12 @@ $navy: #10214d;
       border: none;
       border-radius: 5px;
       font-size: 1rem;
-      font-family: "Poppins", sans-serif;
       box-sizing: border-box;
       margin-bottom: 10px;
     }
 
     button {
       padding: 12px;
-      font-family: "Poppins", sans-serif;
       font-size: 1rem;
       font-weight: bold;
       border: none;

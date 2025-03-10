@@ -4,12 +4,7 @@ $navy: #10214d;
 
 .header {
   background-color: $gold;
-  padding: 20px 50px;
-  width: 100%;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1000;
+  padding: 20px;
 
   .header-content {
     display: flex;
@@ -25,7 +20,7 @@ $navy: #10214d;
 
   .nav-links {
     display: flex;
-    gap: 30px;
+    gap: 50px;
 
     .nav-link {
       color: $navy;
