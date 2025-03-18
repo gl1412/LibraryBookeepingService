@@ -9,11 +9,13 @@ const Header = () => {
   return (
     <header className="header">
       <div className="header-content">
-        <img
-          src={libraryLogo}
-          alt="London Public Library Logo"
-          className="logo"
-        />
+        <a href="https://www.lpl.ca/" target="_blank" rel="noreferrer">
+          <img
+            src={libraryLogo}
+            alt="London Public Library Logo"
+            className="logo"
+          />
+        </a>
         <nav className="nav-links">
           <Link to="/" className="nav-link">
             Home
