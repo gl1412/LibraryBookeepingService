@@ -193,14 +193,15 @@ const PatronDashboard = () => {
 
         {/* Main Content */}
         <div className="main-content">
-          {/* Search Bar */}
+          {/* Search Bar
           <input
             type="text"
             className="search-bar"
             placeholder="Search by name, capacity, or equipment..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-          />
+          /> */}
+          <h2>Patron Dashboard</h2>
 
           {/* Room Grid */}
           <div className="room-grid">

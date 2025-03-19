@@ -1,14 +1,13 @@
 $white: #ffffff;
 $gold: #f0c148;
 $navy: #10214d;
+$red: #d9534f;
 
 .dashboard-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  min-height: 100vh;
-  width: 100vw;
   background-color: $navy;
   color: $white;
   text-align: center;
@@ -16,14 +15,19 @@ $navy: #10214d;
   overflow-y: auto;
 }
 
-.lpl-logo {
-  width: 150px;
-  margin-bottom: 15px;
+h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
 }
 
-h2 {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
+h3 {
+  font-size: 1.5rem;
+  margin-top: 12px;
+  color: $gold;
+}
+
+p {
+  font-size: 1.1rem;
 }
 
 .dashboard-content {
