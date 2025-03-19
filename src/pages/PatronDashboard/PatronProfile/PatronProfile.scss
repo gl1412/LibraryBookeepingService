@@ -1,0 +1,35 @@
+$white: #ffffff;
+$gold: #f0c148;
+$navy: #10214d;
+
+.patron-profile-container {
+  margin: 50px;
+
+  h2 {
+    color: $gold;
+  }
+
+  .bookings-list {
+    display: grid;
+    gap: 15px;
+    margin-top: 20px;
+
+    .booking-item {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 8px;
+
+      h3 {
+        font-size: 1.5rem;
+        color: $gold;
+        margin-bottom: 5px;
+        margin-top: 0;
+      }
+
+      p {
+        margin: 5px 0;
+        color: $white;
+      }
+    }
+  }
+}

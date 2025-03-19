@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PatronDashboard.scss";
+import PatronHeader from "../../components/PatronHeader/PatronHeader.js";
 
 const PatronDashboard = () => {
   const navigate = useNavigate();
@@ -132,154 +133,159 @@ const PatronDashboard = () => {
   });
 
   return (
-    <div className="patron-dashboard-container">
-      {/* Left Panel (Filters) */}
-      <div className="filter-sidebar">
-        <h3>Filters</h3>
-        <label>Date:</label>
-        <input
-          type="date"
-          name="date"
-          value={selectedFilters.date}
-          onChange={handleFilterChange}
-        />
+    <>
+      <PatronHeader />
+      <div className="patron-dashboard-container">
+        {/* Left Panel (Filters) */}
+        <div className="filter-sidebar">
+          <h3>Filters</h3>
+          <label>Date:</label>
+          <input
+            type="date"
+            name="date"
+            value={selectedFilters.date}
+            onChange={handleFilterChange}
+          />
 
-        <label>Room Size:</label>
-        <select
-          name="size"
-          value={selectedFilters.size}
-          onChange={handleFilterChange}
-        >
-          <option value="">Any</option>
-          <option value="small">Small (1-4 people)</option>
-          <option value="medium">Medium (5-10 people)</option>
-          <option value="large">Large (10+ people)</option>
-        </select>
+          <label>Room Size:</label>
+          <select
+            name="size"
+            value={selectedFilters.size}
+            onChange={handleFilterChange}
+          >
+            <option value="">Any</option>
+            <option value="small">Small (1-4 people)</option>
+            <option value="medium">Medium (5-10 people)</option>
+            <option value="large">Large (10+ people)</option>
+          </select>
 
-        <label>Equipment:</label>
-        <input
-          type="text"
-          name="equipment"
-          placeholder="Projector, TV..."
-          value={selectedFilters.equipment}
-          onChange={handleFilterChange}
-        />
+          <label>Equipment:</label>
+          <input
+            type="text"
+            name="equipment"
+            placeholder="Projector, TV..."
+            value={selectedFilters.equipment}
+            onChange={handleFilterChange}
+          />
 
-        <label>Location:</label>
-        <select
-          name="location"
-          value={selectedFilters.location}
-          onChange={handleFilterChange}
-        >
-          <option value="">Any</option>
-          <option value="Floor 1">Floor 1</option>
-          <option value="Floor 2">Floor 2</option>
-          <option value="Floor 3">Floor 3</option>
-        </select>
+          <label>Location:</label>
+          <select
+            name="location"
+            value={selectedFilters.location}
+            onChange={handleFilterChange}
+          >
+            <option value="">Any</option>
+            <option value="Floor 1">Floor 1</option>
+            <option value="Floor 2">Floor 2</option>
+            <option value="Floor 3">Floor 3</option>
+          </select>
 
-        {/* Apply Filters Button */}
-        <button className="apply-filters-btn" onClick={applyFilters}>
-          Apply Filters
-        </button>
+          {/* Apply Filters Button */}
+          <button className="apply-filters-btn" onClick={applyFilters}>
+            Apply Filters
+          </button>
 
-        {/* Clear Filters Button */}
-        <button className="clear-filters-btn" onClick={clearFilters}>
-          Clear Filters
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="main-content">
-        {/* Search Bar */}
-        <input
-          type="text"
-          className="search-bar"
-          placeholder="Search by name, capacity, or equipment..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        {/* Room Grid */}
-        <div className="room-grid">
-          {filteredRooms.length > 0 ? (
-            filteredRooms.map((room) => (
-              <div
-                key={room.id}
-                className="room-card"
-                onClick={() => setSelectedRoom(room)}
-              >
-                <h3>{room.name}</h3>
-                <p>
-                  <b>Capacity:</b> {room.capacity} people
-                </p>
-                <p>
-                  <b>Equipment:</b> {room.equipment}
-                </p>
-                <p>
-                  <b>Location:</b> {room.location}
-                </p>
-                <button className="reserve-btn">View Details</button>
-              </div>
-            ))
-          ) : (
-            <p className="no-results">No rooms match your search or filters.</p>
-          )}
+          {/* Clear Filters Button */}
+          <button className="clear-filters-btn" onClick={clearFilters}>
+            Clear Filters
+          </button>
         </div>
-      </div>
 
-      {/* Room Details Modal */}
-      {selectedRoom && !isReserving && (
-        <div className="modal-overlay" onClick={closeModals}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={closeModals}>
-              ✖
-            </button>
-            <h2>{selectedRoom.name}</h2>
-            <img
-              src={selectedRoom.image}
-              alt={selectedRoom.name}
-              className="room-image"
-            />
-            <p>
-              <b>Capacity:</b> {selectedRoom.capacity} people
-            </p>
-            <p>
-              <b>Equipment:</b> {selectedRoom.equipment}
-            </p>
-            <p>
-              <b>Location:</b> {selectedRoom.location}
-            </p>
-            <p>
-              <b>Description:</b> {selectedRoom.description}
-            </p>
-            <button className="reserve-btn" onClick={openReservationForm}>
-              Reserve Now
-            </button>
+        {/* Main Content */}
+        <div className="main-content">
+          {/* Search Bar */}
+          <input
+            type="text"
+            className="search-bar"
+            placeholder="Search by name, capacity, or equipment..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          {/* Room Grid */}
+          <div className="room-grid">
+            {filteredRooms.length > 0 ? (
+              filteredRooms.map((room) => (
+                <div
+                  key={room.id}
+                  className="room-card"
+                  onClick={() => setSelectedRoom(room)}
+                >
+                  <h3>{room.name}</h3>
+                  <p>
+                    <b>Capacity:</b> {room.capacity} people
+                  </p>
+                  <p>
+                    <b>Equipment:</b> {room.equipment}
+                  </p>
+                  <p>
+                    <b>Location:</b> {room.location}
+                  </p>
+                  <button className="reserve-btn">View Details</button>
+                </div>
+              ))
+            ) : (
+              <p className="no-results">
+                No rooms match your search or filters.
+              </p>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Reservation Form Modal */}
-      {isReserving && (
-        <div className="modal-overlay" onClick={closeModals}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={closeModals}>
-              ✖
-            </button>
-            <h2>Reserve {selectedRoom?.name}</h2>
-            <form>
-              <label>Name:</label>
-              <input type="text" required />
-              <label>Email:</label>
-              <input type="email" required />
-              <button type="submit" className="reserve-btn">
-                Confirm Reservation
+        {/* Room Details Modal */}
+        {selectedRoom && !isReserving && (
+          <div className="modal-overlay" onClick={closeModals}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <button className="close-btn" onClick={closeModals}>
+                ✖
               </button>
-            </form>
+              <h2>{selectedRoom.name}</h2>
+              <img
+                src={selectedRoom.image}
+                alt={selectedRoom.name}
+                className="room-image"
+              />
+              <p>
+                <b>Capacity:</b> {selectedRoom.capacity} people
+              </p>
+              <p>
+                <b>Equipment:</b> {selectedRoom.equipment}
+              </p>
+              <p>
+                <b>Location:</b> {selectedRoom.location}
+              </p>
+              <p>
+                <b>Description:</b> {selectedRoom.description}
+              </p>
+              <button className="reserve-btn" onClick={openReservationForm}>
+                Reserve Now
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* Reservation Form Modal */}
+        {isReserving && (
+          <div className="modal-overlay" onClick={closeModals}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <button className="close-btn" onClick={closeModals}>
+                ✖
+              </button>
+              <h2>Reserve {selectedRoom?.name}</h2>
+              <form>
+                <label>Name:</label>
+                <input type="text" required />
+                <label>Email:</label>
+                <input type="email" required />
+                <button type="submit" className="reserve-btn">
+                  Confirm Reservation
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 
