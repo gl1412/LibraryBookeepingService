@@ -1,11 +1,11 @@
 import React from "react";
 // import { Navbar3 } from "./components/Navbar3";
 // import { Header50 } from "./components/Header50";
-import { Faq1 } from "./components/Faq1";
-import { Contact14 } from "./components/Contact14";
-import { Contact5 } from "./components/Contact5";
-import { Footer9 } from "./components/Footer9";
-import Header from "../components/Header/Header.jsx";
+import { Faq1 } from "./components/Faq1.jsx";
+import { Contact14 } from "./components/Contact14.jsx";
+import { Contact5 } from "./components/Contact5.jsx";
+import { Footer9 } from "../../components/Footer/Footer9.jsx";
+import Header from "../../components/Header/Header.jsx";
 
 export default function FAQ() {
   return (

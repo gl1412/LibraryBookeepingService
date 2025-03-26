@@ -2,12 +2,13 @@ import { useNavigate } from "react-router-dom";
 import "./LandingPage.scss";
 import lplLogo from "../../assets/lpl-icon-yellow.svg";
 import Header from "../../components/Header/Header.jsx";
-import Footer from "../../components/Footer/Footer.jsx";
+import {Footer9} from "../../components/Footer/Footer9.jsx";
 
 const LandingPage = () => {
   const navigate = useNavigate();
 
   return (
+    <>
     <div className="page-container">
       <Header />
       <div className="landing-container">
@@ -31,8 +32,10 @@ const LandingPage = () => {
           </div>
         </main>
       </div>
-      <Footer />
+      
     </div>
+    <Footer9 />
+    </>
   );
 };
 

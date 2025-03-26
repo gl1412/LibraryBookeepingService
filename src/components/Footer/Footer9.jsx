@@ -40,7 +40,7 @@ export function Footer9() {
                 className="inline-block"
               />
             </a>
-            <p className="mb-5 md:mb-6">
+            <p className="mb-5 md:mb-6 text-white">
               Subscribe to our newsletter for the latest updates on features and
               releases.
             </p>
@@ -65,7 +65,7 @@ export function Footer9() {
                   Join
                 </Button>
               </form>
-              <p className="text-xs">
+              <p className="text-xs text-white">
                 By subscribing, you consent to our Privacy Policy and receive
                 updates.
               </p>
@@ -170,7 +170,7 @@ export function Footer9() {
           </div>
         </div>
         <div className="flex flex-col-reverse items-start justify-between pb-4 pt-6 text-sm md:flex-row md:items-center md:pb-0 md:pt-8">
-          <p className="mt-6 md:mt-0">© 2024 Relume. All rights reserved.</p>
+          <p className="mt-6 md:mt-0 text-white">© 2025 London Public Library. All Rights Reserved..</p>
           <ul className="grid grid-flow-row grid-cols-[max-content] justify-center gap-y-4 text-sm md:grid-flow-col md:gap-x-6 md:gap-y-0">
             <li className="underline">
               <a href="#">Privacy Policy</a>

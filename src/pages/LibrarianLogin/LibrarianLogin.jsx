@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./LibrarianLogin.scss";
 import lplLogo from "../../assets/lpl-icon-yellow.svg";
 import Header from "../../components/Header/Header.jsx";
-import Footer from "../../components/Footer/Footer.jsx";
+import { Footer9 } from "../../components/Footer/Footer9.jsx";
 
 const LibrarianLogin = () => {
   const [email, setEmail] = useState("");
@@ -22,6 +22,7 @@ const LibrarianLogin = () => {
   };
 
   return (
+    <>
     <div className="page-container">
       <Header />
       <div className="librarian-login-container">
@@ -49,8 +50,10 @@ const LibrarianLogin = () => {
           <button type="submit">Login</button>
         </form>
       </div>
-      <Footer />
+      
     </div>
+    <Footer9 />
+    </>
   );
 };
 

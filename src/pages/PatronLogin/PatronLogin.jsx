@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import "./PatronLogin.scss";
 import lplLogo from "../../assets/lpl-icon-yellow.svg";
 import Header from "../../components/Header/Header.jsx";
-import Footer from "../../components/Footer/Footer.jsx";
+
+import { Footer9 } from "../../components/Footer/Footer9";
 
 const PatronLogin = () => {
   const [email, setEmail] = useState("");
@@ -22,6 +23,7 @@ const PatronLogin = () => {
   };
 
   return (
+    <>
     <div className="page-container">
       <Header />
       <div className="patron-login-container">
@@ -53,8 +55,10 @@ const PatronLogin = () => {
           </button>
         </p>
       </div>
-      <Footer />
+      
     </div>
+    <Footer9 />
+    </>
   );
 };
 

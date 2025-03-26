@@ -29,7 +29,7 @@ export function Contact14() {
               </h3>
               <p className="mb-2">Reach us at</p>
               <a className="underline" href="#">
-                hello@relume.io
+                hello@library.com
               </a>
             </div>
             <div>

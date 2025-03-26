@@ -28,6 +28,9 @@ const Header = () => {
           <Link to="/faq" className="nav-link">
             FAQ
           </Link>
+          <Link to="/reservation-form-screen" className="nav-link">
+            Reserve now
+          </Link>
           <button
             className="register-btn"
             onClick={() => navigate("/landing-page")}

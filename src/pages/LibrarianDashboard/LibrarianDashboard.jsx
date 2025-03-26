@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./LibrarianDashboard.scss";
 import lplLogo from "../../assets/lpl-icon-white.svg";
+import { Footer9 } from "../../components/Footer/Footer9";
+
+
 
 const LibrarianDashboard = () => {
   const navigate = useNavigate();
@@ -35,6 +38,7 @@ const LibrarianDashboard = () => {
     alert(`Toggled availability for room ${id}.`);
 
   return (
+    <>
     <div className="dashboard-container">
       <img src={lplLogo} alt="LPL Logo" className="lpl-logo" />
       <h2>Librarian Dashboard</h2>
@@ -93,6 +97,9 @@ const LibrarianDashboard = () => {
         </div>
       </div>
     </div>
+
+    <Footer9 />
+    </>
   );
 };
 

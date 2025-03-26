@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PatronDashboard.scss";
+import { Footer9 } from "../../components/Footer/Footer9";
 
 const PatronDashboard = () => {
   const navigate = useNavigate();
@@ -132,6 +133,7 @@ const PatronDashboard = () => {
   });
 
   return (
+    <>
     <div className="patron-dashboard-container">
       {/* Left Panel (Filters) */}
       <div className="filter-sidebar">
@@ -267,7 +269,11 @@ const PatronDashboard = () => {
               ✖
             </button>
             <h2>Reserve {selectedRoom?.name}</h2>
-            <form>
+            <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              navigate("/reservation-confirmed");
+            }}>
               <label>Name:</label>
               <input type="text" required />
               <label>Email:</label>
@@ -279,7 +285,12 @@ const PatronDashboard = () => {
           </div>
         </div>
       )}
+      
+      {/* Footer */}  
+      
     </div>
+    <Footer9 />
+    </>
   );
 };
 

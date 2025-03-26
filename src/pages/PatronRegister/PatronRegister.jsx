@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./PatronRegister.scss";
 import lplLogo from "../../assets/lpl-icon-yellow.svg";
 import Header from "../../components/Header/Header.jsx";
-import Footer from "../../components/Footer/Footer.jsx";
+import {Footer9} from "../../components/Footer/Footer9.jsx";
 
 // Placeholder library card database
 const libraryCardDatabase = [
@@ -185,7 +185,7 @@ const PatronRegister = () => {
           <button onClick={() => navigate("/patron-login")}>Login here.</button>
         </p>
       </div>
-      <Footer />
+      <Footer9 />
     </>
   );
 };
