@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../Firebase.js";
 import "./PatronLogin.scss";
 import lplLogo from "../../assets/lpl-icon-yellow.svg";
 import Header from "../../components/Header/Header.js";
@@ -10,14 +12,28 @@ const PatronLogin = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Placeholder account (we will replace with proper backend logic later)
-    if (email === "user@library.com" && password === "password") {
-      localStorage.setItem("patron", email); // Store session
+
+    try {
+      // Sign in user with email and password
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      // Login successful
+      console.log("Login successful!", userCredential.user);
+
+      // Store session (if needed)
+      localStorage.setItem("patron", email);
+
+      // Redirect to user dashboard
       navigate("/patron-dashboard");
-    } else {
-      alert("Invalid credentials");
+    } catch (error) {
+      console.error("Error signing in:", error.message);
+      alert("Invalid credentials. Please try again.");
     }
   };
 

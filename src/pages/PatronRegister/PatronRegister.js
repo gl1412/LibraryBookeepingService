@@ -1,21 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../Firebase.js";
 import "./PatronRegister.scss";
 import lplLogo from "../../assets/lpl-icon-yellow.svg";
 import Header from "../../components/Header/Header.js";
 import Footer from "../../components/Footer/Footer.js";
-
-// Placeholder library card database
-const libraryCardDatabase = [
-  {
-    cardNumber: "12345678",
-    pin: "1234",
-    firstName: "John",
-    lastName: "Doe",
-    dob: "1990-01-01",
-    postalCode: "A1B2C3",
-  },
-];
 
 const PatronRegister = () => {
   const [formData, setFormData] = useState({
@@ -34,26 +24,27 @@ const PatronRegister = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
 
-    const matchingCard = libraryCardDatabase.find(
-      (card) =>
-        card.cardNumber === formData.cardNumber &&
-        card.pin === formData.pin &&
-        card.firstName === formData.firstName &&
-        card.lastName === formData.lastName &&
-        card.dob === formData.dob &&
-        card.postalCode === formData.postalCode
-    );
-
-    if (matchingCard) {
-      alert(
-        "Registration successful! You can now log in with your email and password."
+    try {
+      // Create user with email and password
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
       );
+
+      // Registration successful
+      alert(
+        "Registration successful! You can now login using your email and password."
+      );
+
+      // Redirect to login page or user dashboard
       navigate("/patron-login");
-    } else {
-      alert("Library card information does not match our records.");
+    } catch (error) {
+      console.error("Error registering user:", error.message);
+      alert("Error registering user. Please try again.");
     }
   };
 
