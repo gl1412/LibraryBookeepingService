@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { auth, db } from "../../Firebase.js";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import "./LibrarianLogin.scss";
 import lplLogo from "../../assets/lpl-icon-yellow.svg";
 import Header from "../../components/Header/Header.js";
@@ -10,14 +13,35 @@ const LibrarianLogin = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // This is placeholder authentication ( we can replace with backend logic eventually)
-    if (email === "admin@library.com" && password === "password") {
-      localStorage.setItem("librarian", email);
-      navigate("/librarian-dashboard");
-    } else {
-      alert("Invalid credentials");
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      // Fetch user role from Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        console.log("User data from Firestore:", userData);
+
+        if (userData.role === "librarian") {
+          localStorage.setItem("librarian", email);
+          navigate("/librarian-dashboard");
+        } else {
+          alert("Access denied. Only librarians can log in here.");
+        }
+      } else {
+        alert("User not found in Firestore.");
+      }
+    } catch (error) {
+      console.error("Error during login:", error);
+      alert("Invalid credentials or user not found.");
     }
   };
 

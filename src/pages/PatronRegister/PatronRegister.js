@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../Firebase.js";
+import { auth, db } from "../../Firebase.js";
+import { setDoc, doc } from "firebase/firestore";
 import "./PatronRegister.scss";
 import lplLogo from "../../assets/lpl-icon-yellow.svg";
 import Header from "../../components/Header/Header.js";
@@ -28,23 +29,23 @@ const PatronRegister = () => {
     e.preventDefault();
 
     try {
-      // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
+      const user = userCredential.user;
 
-      // Registration successful
-      alert(
-        "Registration successful! You can now login using your email and password."
-      );
+      // Store user role in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        email: formData.email,
+        role: "patron",
+      });
 
-      // Redirect to login page or user dashboard
+      alert("Registration successful! You can now log in.");
       navigate("/patron-login");
     } catch (error) {
-      console.error("Error registering user:", error.message);
-      alert("Error registering user. Please try again.");
+      alert(error.message);
     }
   };
 
