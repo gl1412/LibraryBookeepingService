@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import "./LibrarianDashboard.scss";
 import lplLogo from "../../assets/lpl-icon-white.svg";
 import LibrarianHeader from "../../components/LibrarianHeader/LibrarianHeader.js";
+import Footer from "../../components/Footer/Footer.js";
 
 const LibrarianDashboard = () => {
   const navigate = useNavigate();
@@ -34,6 +37,35 @@ const LibrarianDashboard = () => {
   const handleDeny = (id) => alert(`Reservation ${id} denied.`);
   const toggleRoomAvailability = (id) =>
     alert(`Toggled availability for room ${id}.`);
+
+  const generateReport = () => {
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("Librarian Dashboard Report", 14, 15);
+
+    // Reservations Table
+    doc.setFontSize(14);
+    doc.text("Reservations", 14, 25);
+    autoTable(doc, {
+      startY: 30,
+      head: [["Patron", "Room", "Status"]],
+      body: reservations.map((res) => [res.patron, res.room, res.status]),
+    });
+
+    // Rooms Table
+    doc.text("Room Availability", 14, doc.lastAutoTable.finalY + 10);
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 15,
+      head: [["Room", "Available"]],
+      body: rooms.map((room) => [room.id, room.available ? "Yes" : "No"]),
+    });
+
+    // Save PDF
+    doc.save("Librarian_Dashboard_Report.pdf");
+  };
 
   return (
     <>
@@ -96,8 +128,14 @@ const LibrarianDashboard = () => {
               </div>
             ))}
           </div>
+
+          {/* Generate Report Button */}
+          <button className="generate-report-btn" onClick={generateReport}>
+            Generate Report
+          </button>
         </div>
       </div>
+      <Footer />
     </>
   );
 };
