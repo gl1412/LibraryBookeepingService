@@ -1,10 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { db } from "../../Firebase.js";
+import { collection, getDocs, addDoc, query, where } from "firebase/firestore";
 import "./PatronDashboard.scss";
 import PatronHeader from "../../components/PatronHeader/PatronHeader.js";
 
 const PatronDashboard = () => {
   const navigate = useNavigate();
+  const [rooms, setRooms] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [equipmentOptions, setEquipmentOptions] = useState([]);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [isReserving, setIsReserving] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState({
+    location: "",
+    type: "",
+    equipment: [],
+  });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
 
   useEffect(() => {
     if (!localStorage.getItem("patron")) {
@@ -13,160 +28,127 @@ const PatronDashboard = () => {
     }
   }, [navigate]);
 
-  // Temporary Testing Data (we will replace with proper logic later)
-  const [rooms, setRooms] = useState([
-    {
-      id: 1,
-      name: "Study Room A",
-      capacity: 4,
-      equipment: "Projector, Whiteboard",
-      location: "Floor 2",
-      description: "A quiet study space with a projector and whiteboard.",
-      tags: ["Study-Only"],
-      image: "/images/study-room.jpg",
-    },
-    {
-      id: 2,
-      name: "Conference Room B",
-      capacity: 10,
-      equipment: "TV, Microphone",
-      location: "Floor 1",
-      description: "A spacious conference room with a TV and microphones.",
-      tags: ["Group Discussion"],
-      image: "/images/conference-room.jpg",
-    },
-    {
-      id: 3,
-      name: "Quiet Room C",
-      capacity: 2,
-      equipment: "Noise Cancelling",
-      location: "Floor 3",
-      description: "A small private room with noise-cancelling features.",
-      tags: ["Silent Room"],
-      image: "/images/quiet-room.jpg",
-    },
-  ]);
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const roomsCollection = collection(db, "rooms");
+        const roomSnapshot = await getDocs(roomsCollection);
+        const roomList = roomSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setRooms(roomList);
 
-  const [search, setSearch] = useState("");
-  const [selectedRoom, setSelectedRoom] = useState(null); // Track selected room for modal
-  const [isReserving, setIsReserving] = useState(false); // Track reservation form modal
+        const uniqueLocations = [
+          ...new Set(roomList.map((room) => room.location)),
+        ].sort();
+        setLocations(uniqueLocations);
 
-  // Filter States
-  const [selectedFilters, setSelectedFilters] = useState({
-    date: "",
-    size: "",
-    equipment: "",
-    location: "",
-  });
+        const allEquipment = [
+          ...new Set(roomList.flatMap((room) => room.equipment)),
+        ];
+        setEquipmentOptions(allEquipment);
+      } catch (error) {
+        console.error("Error fetching rooms:", error);
+      }
+    };
+    fetchRooms();
+  }, []);
 
-  const [appliedFilters, setAppliedFilters] = useState({
-    date: "",
-    size: "",
-    equipment: "",
-    location: "",
-  });
-
-  // Handle Filter Change
   const handleFilterChange = (e) => {
-    setSelectedFilters({ ...selectedFilters, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setSelectedFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Apply Filters
-  const applyFilters = () => {
-    setAppliedFilters({ ...selectedFilters });
+  const handleEquipmentChange = (e) => {
+    const { value, checked } = e.target;
+    setSelectedFilters((prev) => ({
+      ...prev,
+      equipment: checked
+        ? [...prev.equipment, value]
+        : prev.equipment.filter((eq) => eq !== value),
+    }));
   };
 
-  // Clear Filters
   const clearFilters = () => {
     setSelectedFilters({
-      date: "",
-      size: "",
-      equipment: "",
       location: "",
-    });
-    setAppliedFilters({
-      date: "",
-      size: "",
-      equipment: "",
-      location: "",
+      type: "",
+      equipment: [],
     });
   };
 
-  // Open Reservation Form
-  const openReservationForm = () => {
-    setIsReserving(true);
+  const openReservationModal = (room) => {
+    setSelectedRoom(room);
+    setModalOpen(true);
   };
 
-  // Close Modals (Room Details & Reservation)
-  const closeModals = () => {
+  const closeReservationModal = () => {
+    setModalOpen(false);
     setSelectedRoom(null);
-    setIsReserving(false);
+    setSelectedDate("");
+    setSelectedTime("");
   };
 
-  // Filtered Room List (based on search + filters)
+  const handleReserve = async () => {
+    // Check if the selected date is at least 7 days from today
+    const today = new Date();
+    const minBookingDate = new Date(today);
+    minBookingDate.setDate(today.getDate() + 7); // 7 days from today
+
+    const selectedDateObj = new Date(selectedDate);
+    if (selectedDateObj < minBookingDate) {
+      alert("You can only book a room 7 days or more in advance.");
+      return;
+    }
+
+    try {
+      const bookingRef = collection(db, "rooms", selectedRoom.id, "bookings");
+      const existingBookingsQuery = query(
+        bookingRef,
+        where("date", "==", selectedDate),
+        where("time", "==", selectedTime)
+      );
+      const existingBookingsSnapshot = await getDocs(existingBookingsQuery);
+      if (!existingBookingsSnapshot.empty) {
+        alert(
+          "The selected time slot is already booked. Please choose another."
+        );
+        return;
+      }
+
+      await addDoc(bookingRef, {
+        roomName: selectedRoom.name,
+        location: selectedRoom.location,
+        date: selectedDate,
+        time: selectedTime,
+        userEmail: localStorage.getItem("patron"),
+      });
+
+      alert("Room reserved successfully!");
+      closeReservationModal();
+    } catch (error) {
+      console.error("Error reserving room:", error);
+      alert("Failed to reserve room. Please try again later.");
+    }
+  };
+
   const filteredRooms = rooms.filter((room) => {
-    const searchTerm = search.toLowerCase();
-
-    const matchesSearch =
-      room.name.toLowerCase().includes(searchTerm) ||
-      room.capacity.toString().includes(searchTerm) ||
-      room.equipment.toLowerCase().includes(searchTerm) ||
-      room.location.toLowerCase().includes(searchTerm);
-
-    const matchesFilters =
-      (!appliedFilters.size ||
-        (appliedFilters.size === "small" && room.capacity <= 4) ||
-        (appliedFilters.size === "medium" &&
-          room.capacity > 4 &&
-          room.capacity <= 10) ||
-        (appliedFilters.size === "large" && room.capacity > 10)) &&
-      (!appliedFilters.equipment ||
-        room.equipment
-          .toLowerCase()
-          .includes(appliedFilters.equipment.toLowerCase())) &&
-      (!appliedFilters.location ||
-        room.location
-          .toLowerCase()
-          .includes(appliedFilters.location.toLowerCase()));
-
-    return matchesSearch && matchesFilters;
+    return (
+      (!selectedFilters.location ||
+        room.location === selectedFilters.location) &&
+      (!selectedFilters.type || room.type === selectedFilters.type) &&
+      (!selectedFilters.equipment.length ||
+        selectedFilters.equipment.every((eq) => room.equipment.includes(eq)))
+    );
   });
 
   return (
     <>
       <PatronHeader />
       <div className="patron-dashboard-container">
-        {/* Left Panel (Filters) */}
         <div className="filter-sidebar">
           <h3>Filters</h3>
-          <label>Date:</label>
-          <input
-            type="date"
-            name="date"
-            value={selectedFilters.date}
-            onChange={handleFilterChange}
-          />
-
-          <label>Room Size:</label>
-          <select
-            name="size"
-            value={selectedFilters.size}
-            onChange={handleFilterChange}
-          >
-            <option value="">Any</option>
-            <option value="small">Small (1-4 people)</option>
-            <option value="medium">Medium (5-10 people)</option>
-            <option value="large">Large (10+ people)</option>
-          </select>
-
-          <label>Equipment:</label>
-          <input
-            type="text"
-            name="equipment"
-            placeholder="Projector, TV..."
-            value={selectedFilters.equipment}
-            onChange={handleFilterChange}
-          />
 
           <label>Location:</label>
           <select
@@ -175,35 +157,45 @@ const PatronDashboard = () => {
             onChange={handleFilterChange}
           >
             <option value="">Any</option>
-            <option value="Floor 1">Floor 1</option>
-            <option value="Floor 2">Floor 2</option>
-            <option value="Floor 3">Floor 3</option>
+            {locations.map((loc, index) => (
+              <option key={index} value={loc}>
+                {loc}
+              </option>
+            ))}
           </select>
 
-          {/* Apply Filters Button */}
-          <button className="apply-filters-btn" onClick={applyFilters}>
-            Apply Filters
-          </button>
+          <label>Room Type:</label>
+          <select
+            name="type"
+            value={selectedFilters.type}
+            onChange={handleFilterChange}
+          >
+            <option value="">Any</option>
+            <option value="Study Room">Study Room</option>
+            <option value="Meeting Room">Meeting Room</option>
+          </select>
 
-          {/* Clear Filters Button */}
+          <label>Equipment:</label>
+          <div className="equipment-filter">
+            {equipmentOptions.map((eq, index) => (
+              <div key={index} className="equipment-option">
+                <input
+                  type="checkbox"
+                  value={eq}
+                  checked={selectedFilters.equipment.includes(eq)}
+                  onChange={handleEquipmentChange}
+                />
+                <label>{eq}</label>
+              </div>
+            ))}
+          </div>
           <button className="clear-filters-btn" onClick={clearFilters}>
             Clear Filters
           </button>
         </div>
 
-        {/* Main Content */}
         <div className="main-content">
-          {/* Search Bar
-          <input
-            type="text"
-            className="search-bar"
-            placeholder="Search by name, capacity, or equipment..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          /> */}
           <h2>Patron Dashboard</h2>
-
-          {/* Room Grid */}
           <div className="room-grid">
             {filteredRooms.length > 0 ? (
               filteredRooms.map((room) => (
@@ -217,12 +209,18 @@ const PatronDashboard = () => {
                     <b>Capacity:</b> {room.capacity} people
                   </p>
                   <p>
-                    <b>Equipment:</b> {room.equipment}
+                    <b>Equipment:</b> {room.equipment.join(", ")}
                   </p>
                   <p>
                     <b>Location:</b> {room.location}
                   </p>
-                  <button className="reserve-btn">View Details</button>
+                  <button
+                    type="button"
+                    className="reserve-btn"
+                    onClick={() => openReservationModal(room)}
+                  >
+                    Reserve Room
+                  </button>
                 </div>
               ))
             ) : (
@@ -233,53 +231,51 @@ const PatronDashboard = () => {
           </div>
         </div>
 
-        {/* Room Details Modal */}
-        {selectedRoom && !isReserving && (
-          <div className="modal-overlay" onClick={closeModals}>
+        {/* Room Reservation Modal */}
+        {modalOpen && (
+          <div className="modal-overlay" onClick={closeReservationModal}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <button className="close-btn" onClick={closeModals}>
-                ✖
+              <button className="close-btn" onClick={closeReservationModal}>
+                &times;
               </button>
-              <h2>{selectedRoom.name}</h2>
-              <img
-                src={selectedRoom.image}
-                alt={selectedRoom.name}
-                className="room-image"
-              />
-              <p>
-                <b>Capacity:</b> {selectedRoom.capacity} people
-              </p>
-              <p>
-                <b>Equipment:</b> {selectedRoom.equipment}
-              </p>
-              <p>
-                <b>Location:</b> {selectedRoom.location}
-              </p>
-              <p>
-                <b>Description:</b> {selectedRoom.description}
-              </p>
-              <button className="reserve-btn" onClick={openReservationForm}>
-                Reserve Now
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Reservation Form Modal */}
-        {isReserving && (
-          <div className="modal-overlay" onClick={closeModals}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <button className="close-btn" onClick={closeModals}>
-                ✖
-              </button>
-              <h2>Reserve {selectedRoom?.name}</h2>
+              <h3>{selectedRoom.name}</h3>
+              <p>{selectedRoom.location}</p>
+              <p>{selectedRoom.capacity} people</p>
+              <p>Available Equipment: {selectedRoom.equipment.join(", ")}</p>
               <form>
-                <label>Name:</label>
-                <input type="text" required />
-                <label>Email:</label>
-                <input type="email" required />
-                <button type="submit" className="reserve-btn">
-                  Confirm Reservation
+                <label>Select Date:</label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min={
+                    new Date(new Date().setDate(new Date().getDate() + 7))
+                      .toISOString()
+                      .split("T")[0]
+                  } // 7 days from today
+                  required
+                />
+                <label>Select Time:</label>
+                <select
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  required
+                >
+                  {[...Array(8)].map((_, i) => {
+                    const hour = 9 + i;
+                    return (
+                      <option key={hour} value={`${hour}:00`}>
+                        {`${hour}:00 - ${hour + 1}:00`}
+                      </option>
+                    );
+                  })}
+                </select>
+                <button
+                  type="button"
+                  className="reserve-btn"
+                  onClick={handleReserve}
+                >
+                  Reserve Now
                 </button>
               </form>
             </div>
