@@ -112,7 +112,7 @@ const PatronDashboard = () => {
       const existingBookingsQuery = query(
         bookingRef,
         where("date", "==", selectedDate),
-        where("time", "==", selectedTime) // Ensure this is being stored as a string
+        where("time", "==", selectedTime)
       );
       const existingBookingsSnapshot = await getDocs(existingBookingsQuery);
       if (!existingBookingsSnapshot.empty) {
@@ -122,21 +122,24 @@ const PatronDashboard = () => {
         return;
       }
 
+      // Create a booking with 'Pending' status
       await addDoc(bookingRef, {
         roomName: selectedRoom.name,
         location: selectedRoom.location,
         date: selectedDate,
         time: selectedTime,
         userEmail: localStorage.getItem("patron"),
+        status: "Pending", // Set initial status as Pending
       });
 
-      // Send confirmation email using EmailJS
+      // Send confirmation email for pending status
       const emailParams = {
         user_email: localStorage.getItem("patron"),
         room_name: selectedRoom.name,
         room_location: selectedRoom.location,
         booking_date: selectedDate,
         booking_time: selectedTime,
+        status: "Pending Approval", // Inform the patron of pending status
       };
 
       emailjs

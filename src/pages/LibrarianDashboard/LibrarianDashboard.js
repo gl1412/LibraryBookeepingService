@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { db } from "../../Firebase.js";
+import { doc, updateDoc, collection, getDocs } from "firebase/firestore";
+import emailjs from "emailjs-com";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "./LibrarianDashboard.scss";
-import lplLogo from "../../assets/lpl-icon-white.svg";
 import LibrarianHeader from "../../components/LibrarianHeader/LibrarianHeader.js";
 import Footer from "../../components/Footer/Footer.js";
 
@@ -13,30 +15,148 @@ const LibrarianDashboard = () => {
   const [rooms, setRooms] = useState([]);
 
   useEffect(() => {
-    console.log("LibrarianDashboard Mounted");
-    console.log("LPL Logo Path:", lplLogo);
-
     if (!localStorage.getItem("librarian")) {
       console.warn("No librarian session found. Redirecting to login...");
       navigate("/librarian-login");
       return;
     }
 
-    setReservations([
-      { id: 1, patron: "Steven Smith", room: "A101", status: "Pending" },
-      { id: 2, patron: "Judy Smith", room: "B202", status: "Approved" },
-    ]);
+    const fetchRoomsAndBookings = async () => {
+      try {
+        const roomsSnapshot = await getDocs(collection(db, "rooms"));
+        const roomsList = roomsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setRooms(roomsList);
 
-    setRooms([
-      { id: "A101", available: true },
-      { id: "B202", available: false },
-    ]);
+        // Fetch all bookings in parallel
+        const bookingsPromises = roomsList.map(async (room) => {
+          const bookingsRef = collection(db, "rooms", room.id, "bookings");
+          const bookingsSnapshot = await getDocs(bookingsRef);
+
+          return bookingsSnapshot.docs.map((bookingDoc) => ({
+            id: bookingDoc.id,
+            roomId: room.id, // Ensure roomId is set here
+            ...bookingDoc.data(),
+            room: room.name, // Assuming the room has a name field
+          }));
+        });
+
+        // Wait for all the bookings to be fetched in parallel
+        const allBookings = await Promise.all(bookingsPromises);
+
+        // Flatten the array of arrays into one array
+        const flattenedBookings = allBookings.flat();
+        setReservations(flattenedBookings);
+      } catch (error) {
+        console.error("Error fetching rooms or bookings:", error);
+      }
+    };
+
+    fetchRoomsAndBookings();
   }, [navigate]);
 
-  const handleApprove = (id) => alert(`Reservation ${id} approved.`);
-  const handleDeny = (id) => alert(`Reservation ${id} denied.`);
-  const toggleRoomAvailability = (id) =>
-    alert(`Toggled availability for room ${id}.`);
+  const handleApprove = async (reservation) => {
+    if (!reservation.roomId) {
+      console.error("Error: Room ID is missing for this reservation");
+      alert("Invalid reservation. Room ID is missing.");
+      return;
+    }
+
+    try {
+      const updatedReservation = { ...reservation, status: "Approved" };
+
+      // Optimistically update the status in the local state
+      setReservations((prevReservations) =>
+        prevReservations.map((res) =>
+          res.id === reservation.id ? updatedReservation : res
+        )
+      );
+
+      // Correct path to update the booking status in Firestore
+      const bookingRef = doc(
+        db,
+        "rooms",
+        reservation.roomId,
+        "bookings",
+        reservation.id
+      );
+      await updateDoc(bookingRef, {
+        status: "Approved",
+      });
+
+      // Send approval email to patron
+      const emailParams = {
+        user_email: reservation.userEmail,
+        status: "Approved",
+      };
+
+      await emailjs.send(
+        "service_p7qb2fi",
+        "template_fwti4vi",
+        emailParams,
+        "q6N2whZUsNxvfV7sr"
+      );
+
+      alert(`Reservation approved.`);
+    } catch (error) {
+      console.error("Error approving reservation:", error);
+      alert("Failed to approve the reservation. Please try again later.");
+    }
+  };
+
+  const handleDeny = async (reservation) => {
+    const reason = prompt("Please enter a reason for denial:");
+
+    if (!reason) {
+      alert("Denial reason is required.");
+      return;
+    }
+
+    try {
+      const updatedReservation = { ...reservation, status: "Denied", reason };
+
+      // Optimistically update the status in the local state
+      setReservations((prevReservations) =>
+        prevReservations.map((res) =>
+          res.id === reservation.id ? updatedReservation : res
+        )
+      );
+
+      // Correct path to update the booking status in Firestore
+      const bookingRef = doc(
+        db,
+        "rooms",
+        reservation.roomId,
+        "bookings",
+        reservation.id
+      );
+      await updateDoc(bookingRef, {
+        status: "Denied",
+        reason: reason,
+      });
+
+      // Send denial email to patron
+      const emailParams = {
+        user_email: reservation.userEmail,
+        status: "Denied",
+        reason: reason,
+      };
+
+      await emailjs.send(
+        "service_p7qb2fi",
+        "template_fwti4vi",
+        emailParams,
+        "q6N2whZUsNxvfV7sr"
+      );
+
+      alert(`Reservation denied.`);
+    } catch (error) {
+      console.error("Error denying reservation:", error);
+      alert("Failed to deny the reservation. Please try again later.");
+    }
+  };
 
   const generateReport = () => {
     const doc = new jsPDF();
@@ -51,16 +171,15 @@ const LibrarianDashboard = () => {
     doc.text("Reservations", 14, 25);
     autoTable(doc, {
       startY: 30,
-      head: [["Patron", "Room", "Status"]],
-      body: reservations.map((res) => [res.patron, res.room, res.status]),
-    });
-
-    // Rooms Table
-    doc.text("Room Availability", 14, doc.lastAutoTable.finalY + 10);
-    autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 15,
-      head: [["Room", "Available"]],
-      body: rooms.map((room) => [room.id, room.available ? "Yes" : "No"]),
+      head: [["Patron Email", "Room", "Location", "Date", "Time", "Status"]],
+      body: reservations.map((res) => [
+        res.userEmail,
+        res.room,
+        res.location,
+        res.date,
+        res.time,
+        res.status,
+      ]),
     });
 
     // Save PDF
@@ -91,40 +210,29 @@ const LibrarianDashboard = () => {
             {reservations.map((res) => (
               <div key={res.id} className="reservation-card">
                 <p>
-                  <b>Patron:</b> {res.patron}
+                  <b>Patron Email:</b> {res.userEmail}
                 </p>
                 <p>
                   <b>Room:</b> {res.room}
+                </p>
+                <p>
+                  <b>Location:</b> {res.location} {/* Display Location */}
+                </p>
+                <p>
+                  <b>Date:</b> {res.date} {/* Display Date */}
+                </p>
+                <p>
+                  <b>Time:</b> {res.time} {/* Display Time */}
                 </p>
                 <p>
                   <b>Status:</b> {res.status}
                 </p>
                 {res.status === "Pending" && (
                   <div>
-                    <button onClick={() => handleApprove(res.id)}>
-                      Approve
-                    </button>
-                    <button onClick={() => handleDeny(res.id)}>Deny</button>
+                    <button onClick={() => handleApprove(res)}>Approve</button>
+                    <button onClick={() => handleDeny(res)}>Deny</button>
                   </div>
                 )}
-              </div>
-            ))}
-          </div>
-
-          {/* Room Management */}
-          <div className="rooms">
-            <h3>Room Management</h3>
-            {rooms.map((room) => (
-              <div key={room.id} className="room-card">
-                <p>
-                  <b>Room:</b> {room.id}
-                </p>
-                <p>
-                  <b>Available:</b> {room.available ? "Yes" : "No"}
-                </p>
-                <button onClick={() => toggleRoomAvailability(room.id)}>
-                  {room.available ? "Mark Unavailable" : "Mark Available"}
-                </button>
               </div>
             ))}
           </div>

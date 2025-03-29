@@ -15,14 +15,13 @@ const PatronProfile = () => {
         const userEmail = localStorage.getItem("patron");
         if (!userEmail) return;
 
-        // Step 1: Get all rooms
+        // Get all rooms and bookings for the patron
         const roomsSnapshot = await getDocs(collection(db, "rooms"));
         const rooms = roomsSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data(), // Include room details (like location)
+          ...doc.data(),
         }));
 
-        // Step 2: Fetch bookings for the user from each room's subcollection
         const today = new Date().toISOString().split("T")[0];
 
         const bookingPromises = rooms.map(async (room) => {
@@ -34,15 +33,16 @@ const PatronProfile = () => {
           return snapshot.docs.map((doc) => ({
             id: doc.id,
             roomId: room.id,
-            roomName: room.name, // Get room name
-            location: room.location, // Get room location
+            roomName: room.name,
+            location: room.location,
+            status: doc.data().status, // Include booking status
             ...doc.data(),
           }));
         });
 
         const allBookings = (await Promise.all(bookingPromises)).flat();
 
-        // Step 3: Separate upcoming and past bookings
+        // Separate bookings into upcoming and past based on date
         setUpcomingBookings(
           allBookings.filter((booking) => booking.date >= today)
         );
@@ -80,6 +80,9 @@ const PatronProfile = () => {
                     </p>
                     <p>
                       <strong>Time:</strong> {booking.time}
+                    </p>
+                    <p>
+                      <strong>Status:</strong> {booking.status}
                     </p>
                   </div>
                 ))
