@@ -81,6 +81,12 @@ const PatronDashboard = () => {
   const openReservationModal = (room) => {
     setSelectedRoom(room);
     setModalOpen(true);
+    setSelectedDate(""); // Reset date when modal is opened
+
+    // Set the default time if it's not already set
+    if (!selectedTime) {
+      setSelectedTime("09:00 - 10:00");
+    }
   };
 
   const closeReservationModal = () => {
@@ -91,10 +97,9 @@ const PatronDashboard = () => {
   };
 
   const handleReserve = async () => {
-    // Check if the selected date is at least 7 days from today
     const today = new Date();
     const minBookingDate = new Date(today);
-    minBookingDate.setDate(today.getDate() + 7); // 7 days from today
+    minBookingDate.setDate(today.getDate() + 6);
 
     const selectedDateObj = new Date(selectedDate);
     if (selectedDateObj < minBookingDate) {
@@ -107,7 +112,7 @@ const PatronDashboard = () => {
       const existingBookingsQuery = query(
         bookingRef,
         where("date", "==", selectedDate),
-        where("time", "==", selectedTime)
+        where("time", "==", selectedTime) // Ensure this is being stored as a string
       );
       const existingBookingsSnapshot = await getDocs(existingBookingsQuery);
       if (!existingBookingsSnapshot.empty) {
@@ -121,7 +126,7 @@ const PatronDashboard = () => {
         roomName: selectedRoom.name,
         location: selectedRoom.location,
         date: selectedDate,
-        time: selectedTime,
+        time: selectedTime, // Store time as string like "09:00 - 10:00"
         userEmail: localStorage.getItem("patron"),
       });
 
@@ -258,14 +263,30 @@ const PatronDashboard = () => {
                 <label>Select Time:</label>
                 <select
                   value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedTime(e.target.value); // Update state with the selected time
+                  }}
                   required
                 >
                   {[...Array(8)].map((_, i) => {
-                    const hour = 9 + i;
+                    const hour = 9 + i; // Starting from 9:00
+                    const formattedStart = `${String(hour).padStart(
+                      2,
+                      "0"
+                    )}:00`; // Format hour like 09:00
+                    const nextHour = hour + 1;
+                    const formattedEnd = `${String(nextHour).padStart(
+                      2,
+                      "0"
+                    )}:00`; // Format next hour similarly
+
                     return (
-                      <option key={hour} value={`${hour}:00`}>
-                        {`${hour}:00 - ${hour + 1}:00`}
+                      <option
+                        key={`${formattedStart}-${formattedEnd}`}
+                        value={`${formattedStart}-${formattedEnd}`}
+                      >
+                        {`${formattedStart} - ${formattedEnd}`}{" "}
+                        {/* Display time range */}
                       </option>
                     );
                   })}
