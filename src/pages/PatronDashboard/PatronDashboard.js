@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../../Firebase.js";
 import { collection, getDocs, addDoc, query, where } from "firebase/firestore";
+import emailjs from "emailjs-com";
 import "./PatronDashboard.scss";
 import PatronHeader from "../../components/PatronHeader/PatronHeader.js";
 
@@ -11,7 +12,6 @@ const PatronDashboard = () => {
   const [locations, setLocations] = useState([]);
   const [equipmentOptions, setEquipmentOptions] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [isReserving, setIsReserving] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     location: "",
     type: "",
@@ -126,11 +126,39 @@ const PatronDashboard = () => {
         roomName: selectedRoom.name,
         location: selectedRoom.location,
         date: selectedDate,
-        time: selectedTime, // Store time as string like "09:00 - 10:00"
+        time: selectedTime,
         userEmail: localStorage.getItem("patron"),
       });
 
-      alert("Room reserved successfully!");
+      // Send confirmation email using EmailJS
+      const emailParams = {
+        user_email: localStorage.getItem("patron"),
+        room_name: selectedRoom.name,
+        room_location: selectedRoom.location,
+        booking_date: selectedDate,
+        booking_time: selectedTime,
+      };
+
+      emailjs
+        .send(
+          "service_p7qb2fi",
+          "template_fwti4vi",
+          emailParams,
+          "q6N2whZUsNxvfV7sr"
+        )
+        .then((response) => {
+          console.log("Email sent successfully:", response);
+          alert(
+            "Room reserved successfully! A confirmation email has been sent."
+          );
+        })
+        .catch((error) => {
+          console.error("Error sending email:", error);
+          alert(
+            "Room reserved successfully, but failed to send confirmation email."
+          );
+        });
+
       closeReservationModal();
     } catch (error) {
       console.error("Error reserving room:", error);
