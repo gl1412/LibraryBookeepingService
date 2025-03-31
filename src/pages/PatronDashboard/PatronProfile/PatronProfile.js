@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../../../Firebase.js";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
+import emailjs from "emailjs-com";
 import "./PatronProfile.scss";
 import PatronHeader from "../../../components/PatronHeader/PatronHeader.js";
 
@@ -12,8 +20,8 @@ const PatronProfile = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const userEmail = localStorage.getItem("patron");
-        if (!userEmail) return;
+        const email = localStorage.getItem("patron");
+        if (!email) return;
 
         // Get all rooms and bookings for the patron
         const roomsSnapshot = await getDocs(collection(db, "rooms"));
@@ -27,7 +35,7 @@ const PatronProfile = () => {
         const bookingPromises = rooms.map(async (room) => {
           const bookingsQuery = query(
             collection(db, `rooms/${room.id}/bookings`),
-            where("userEmail", "==", userEmail)
+            where("email", "==", email)
           );
           const snapshot = await getDocs(bookingsQuery);
           return snapshot.docs.map((doc) => ({
@@ -57,6 +65,79 @@ const PatronProfile = () => {
     fetchBookings();
   }, []);
 
+  const handleCancelBooking = async (bookingId, roomId, bookingData) => {
+    if (!window.confirm("Are you sure you want to cancel this booking?"))
+      return;
+
+    try {
+      // Delete booking from Firestore
+      const bookingRef = doc(db, `rooms/${roomId}/bookings/${bookingId}`);
+      await deleteDoc(bookingRef);
+
+      // Send email to the user who cancelled
+      const emailParams = {
+        user_email: bookingData.email,
+        room_name: bookingData.roomName,
+        room_location: bookingData.location,
+        booking_date: bookingData.date,
+        booking_time: bookingData.time,
+        status: "Cancelled",
+      };
+
+      await emailjs.send(
+        "service_p7qb2fi",
+        "template_whfon5g",
+        emailParams,
+        "q6N2whZUsNxvfV7sr"
+      );
+
+      // Fetch reminders for this room (matching roomId, date, and time)
+      const remindersQuery = query(
+        collection(db, "reminders"),
+        where("roomId", "==", roomId),
+        where("date", "==", bookingData.date),
+        where("time", "==", bookingData.time)
+      );
+      const remindersSnapshot = await getDocs(remindersQuery);
+
+      if (!remindersSnapshot.empty) {
+        // Send email notifications to each user who set a reminder
+        remindersSnapshot.forEach(async (reminderDoc) => {
+          const reminder = reminderDoc.data();
+          const notifyEmailParams = {
+            user_email: reminder.email,
+            room_name: bookingData.roomName,
+            room_location: bookingData.location,
+            booking_date: bookingData.date,
+            booking_time: bookingData.time,
+          };
+
+          // Send notification email to each user
+          await emailjs.send(
+            "service_p7qb2fi",
+            "template_fwti4vi",
+            notifyEmailParams,
+            "q6N2whZUsNxvfV7sr"
+          );
+
+          // After notification, delete this reminder from the notifications collection
+          const reminderRef = doc(db, "reminders", reminderDoc.id);
+          await deleteDoc(reminderRef); // Remove the reminder record
+        });
+      }
+
+      // Remove the cancelled booking from state
+      setUpcomingBookings((prevBookings) =>
+        prevBookings.filter((booking) => booking.id !== bookingId)
+      );
+
+      alert("Booking cancelled successfully.");
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      alert("Failed to cancel the booking. Please try again.");
+    }
+  };
+
   return (
     <>
       <PatronHeader />
@@ -84,6 +165,14 @@ const PatronProfile = () => {
                     <p>
                       <strong>Status:</strong> {booking.status}
                     </p>
+                    <button
+                      className="cancel-btn"
+                      onClick={() =>
+                        handleCancelBooking(booking.id, booking.roomId, booking)
+                      }
+                    >
+                      Cancel Booking
+                    </button>
                   </div>
                 ))
               ) : (

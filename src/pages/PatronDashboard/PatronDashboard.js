@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { db } from "../../Firebase.js";
+import { db, auth } from "../../Firebase.js";
 import { collection, getDocs, addDoc, query, where } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import emailjs from "emailjs-com";
 import "./PatronDashboard.scss";
 import PatronHeader from "../../components/PatronHeader/PatronHeader.js";
 
 const PatronDashboard = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [locations, setLocations] = useState([]);
   const [equipmentOptions, setEquipmentOptions] = useState([]);
@@ -19,13 +21,19 @@ const PatronDashboard = () => {
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
+  const [selectedTime, setSelectedTime] = useState("09:00 - 10:00"); // Default time
 
   useEffect(() => {
-    if (!localStorage.getItem("patron")) {
-      console.warn("No patron session found. Redirecting to login...");
-      navigate("/patron-login");
-    }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) {
+        console.warn("No patron session found. Redirecting to login...");
+        navigate("/patron-login");
+      } else {
+        setUser(currentUser);
+      }
+    });
+
+    return () => unsubscribe();
   }, [navigate]);
 
   useEffect(() => {
@@ -71,32 +79,34 @@ const PatronDashboard = () => {
   };
 
   const clearFilters = () => {
-    setSelectedFilters({
-      location: "",
-      type: "",
-      equipment: [],
-    });
+    setSelectedFilters({ location: "", type: "", equipment: [] });
   };
 
   const openReservationModal = (room) => {
     setSelectedRoom(room);
     setModalOpen(true);
-    setSelectedDate(""); // Reset date when modal is opened
-
-    // Set the default time if it's not already set
-    if (!selectedTime) {
-      setSelectedTime("09:00 - 10:00");
-    }
+    setSelectedDate("");
   };
 
   const closeReservationModal = () => {
     setModalOpen(false);
     setSelectedRoom(null);
     setSelectedDate("");
-    setSelectedTime("");
+    setSelectedTime("09:00 - 10:00");
   };
 
   const handleReserve = async () => {
+    if (!user) {
+      alert("You must be logged in to make a booking.");
+      return;
+    }
+
+    if (!selectedRoom || !selectedDate || !selectedTime) {
+      alert("Please select a room, date, and time before booking.");
+      return;
+    }
+
+    const userEmail = user.email;
     const today = new Date();
     const minBookingDate = new Date(today);
     minBookingDate.setDate(today.getDate() + 6);
@@ -115,31 +125,36 @@ const PatronDashboard = () => {
         where("time", "==", selectedTime)
       );
       const existingBookingsSnapshot = await getDocs(existingBookingsQuery);
+
       if (!existingBookingsSnapshot.empty) {
-        alert(
-          "The selected time slot is already booked. Please choose another."
+        const wantsNotification = window.confirm(
+          "This time slot is already booked. Would you like to receive an email if it becomes available?"
         );
+        if (wantsNotification) {
+          await addReminder(selectedRoom.id, selectedDate, selectedTime);
+          alert(
+            "You will be notified via email if this room becomes available."
+          );
+        }
         return;
       }
 
-      // Create a booking with 'Pending' status
       await addDoc(bookingRef, {
         roomName: selectedRoom.name,
         location: selectedRoom.location,
         date: selectedDate,
         time: selectedTime,
-        userEmail: localStorage.getItem("patron"),
-        status: "Pending", // Set initial status as Pending
+        email: userEmail,
+        status: "Pending",
       });
 
-      // Send confirmation email for pending status
       const emailParams = {
-        user_email: localStorage.getItem("patron"),
+        user_email: userEmail,
         room_name: selectedRoom.name,
         room_location: selectedRoom.location,
         booking_date: selectedDate,
         booking_time: selectedTime,
-        status: "Pending Approval", // Inform the patron of pending status
+        status: "Pending Approval",
       };
 
       emailjs
@@ -149,23 +164,32 @@ const PatronDashboard = () => {
           emailParams,
           "q6N2whZUsNxvfV7sr"
         )
-        .then((response) => {
-          console.log("Email sent successfully:", response);
+        .then(() =>
           alert(
             "Room reserved successfully! A confirmation email has been sent."
-          );
-        })
-        .catch((error) => {
-          console.error("Error sending email:", error);
+          )
+        )
+        .catch(() =>
           alert(
             "Room reserved successfully, but failed to send confirmation email."
-          );
-        });
+          )
+        );
 
       closeReservationModal();
     } catch (error) {
       console.error("Error reserving room:", error);
       alert("Failed to reserve room. Please try again later.");
+    }
+  };
+
+  const addReminder = async (roomId, date, time) => {
+    try {
+      const remindersRef = collection(db, "reminders");
+      await addDoc(remindersRef, { roomId, email: user.email, date, time });
+      console.log("Reminder added successfully");
+    } catch (error) {
+      console.error("Error adding reminder:", error);
+      alert("Failed to set up a notification. Please try again.");
     }
   };
 
@@ -185,7 +209,6 @@ const PatronDashboard = () => {
       <div className="patron-dashboard-container">
         <div className="filter-sidebar">
           <h3>Filters</h3>
-
           <label>Location:</label>
           <select
             name="location"

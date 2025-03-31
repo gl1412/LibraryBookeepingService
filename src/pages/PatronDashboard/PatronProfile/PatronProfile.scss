@@ -58,5 +58,21 @@ h2 {
     p {
       margin: 5px 0;
     }
+
+    .cancel-btn {
+      background-color: $gold;
+      color: $navy;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-top: 10px;
+      font-weight: bold;
+      transition: background 0.3s;
+
+      &:hover {
+        background-color: darken($gold, 10%);
+      }
+    }
   }
 }

@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../../Firebase.js";
-import { doc, updateDoc, collection, getDocs } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  collection,
+  getDocs,
+  deleteDoc,
+  query,
+  where,
+} from "firebase/firestore";
 import emailjs from "emailjs-com";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -88,7 +96,7 @@ const LibrarianDashboard = () => {
 
       // Send approval email to patron
       const emailParams = {
-        user_email: reservation.userEmail,
+        user_email: reservation.email,
         room_name: reservation.room,
         room_location: reservation.location,
         booking_date: reservation.date,
@@ -136,13 +144,16 @@ const LibrarianDashboard = () => {
         "bookings",
         reservation.id
       );
+
+      // Update the status to "Denied" rather than deleting the booking
       await updateDoc(bookingRef, {
         status: "Denied",
         reason: reason,
       });
 
+      // Send email to patron about denial
       const emailParams = {
-        user_email: reservation.userEmail,
+        user_email: reservation.email,
         room_name: reservation.room,
         room_location: reservation.location,
         booking_date: reservation.date,
@@ -157,6 +168,42 @@ const LibrarianDashboard = () => {
         emailParams,
         "q6N2whZUsNxvfV7sr"
       );
+
+      // Fetch reminders for this room (matching roomId, date, and time)
+      const remindersQuery = query(
+        collection(db, "reminders"),
+        where("roomId", "==", reservation.roomId),
+        where("date", "==", reservation.date),
+        where("time", "==", reservation.time)
+      );
+
+      const remindersSnapshot = await getDocs(remindersQuery);
+
+      if (!remindersSnapshot.empty) {
+        // Send email notifications to each user who set a reminder
+        for (const reminderDoc of remindersSnapshot.docs) {
+          const reminder = reminderDoc.data();
+          const notifyEmailParams = {
+            user_email: reminder.email,
+            room_name: reservation.roomName,
+            room_location: reservation.location,
+            booking_date: reservation.date,
+            booking_time: reservation.time,
+          };
+
+          // Send notification email to each user
+          await emailjs.send(
+            "service_p7qb2fi",
+            "template_fwti4vi",
+            notifyEmailParams,
+            "q6N2whZUsNxvfV7sr"
+          );
+
+          // After notification, delete this reminder from the notifications collection
+          const reminderRef = doc(db, "reminders", reminderDoc.id);
+          await deleteDoc(reminderRef); // Remove the reminder record
+        }
+      }
 
       alert(`Reservation denied.`);
     } catch (error) {
@@ -180,7 +227,7 @@ const LibrarianDashboard = () => {
       startY: 30,
       head: [["Patron Email", "Room", "Location", "Date", "Time", "Status"]],
       body: reservations.map((res) => [
-        res.userEmail,
+        res.email,
         res.room,
         res.location,
         res.date,
@@ -217,7 +264,7 @@ const LibrarianDashboard = () => {
             {reservations.map((res) => (
               <div key={res.id} className="reservation-card">
                 <p>
-                  <b>Patron Email:</b> {res.userEmail}
+                  <b>Patron Email:</b> {res.email}
                 </p>
                 <p>
                   <b>Room:</b> {res.room}
