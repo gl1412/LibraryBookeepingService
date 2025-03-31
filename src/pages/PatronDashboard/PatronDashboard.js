@@ -46,7 +46,7 @@ const PatronDashboard = () => {
 
         const allEquipment = [
           ...new Set(roomList.flatMap((room) => room.equipment)),
-        ];
+        ].sort();
         setEquipmentOptions(allEquipment);
       } catch (error) {
         console.error("Error fetching rooms:", error);
