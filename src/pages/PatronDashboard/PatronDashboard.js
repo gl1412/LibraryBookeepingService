@@ -145,7 +145,7 @@ const PatronDashboard = () => {
       emailjs
         .send(
           "service_p7qb2fi",
-          "template_fwti4vi",
+          "template_whfon5g",
           emailParams,
           "q6N2whZUsNxvfV7sr"
         )
