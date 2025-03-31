@@ -89,12 +89,16 @@ const LibrarianDashboard = () => {
       // Send approval email to patron
       const emailParams = {
         user_email: reservation.userEmail,
+        room_name: reservation.room,
+        room_location: reservation.location,
+        booking_date: reservation.date,
+        booking_time: reservation.time,
         status: "Approved",
       };
 
       await emailjs.send(
         "service_p7qb2fi",
-        "template_fwti4vi",
+        "template_whfon5g",
         emailParams,
         "q6N2whZUsNxvfV7sr"
       );
@@ -137,16 +141,19 @@ const LibrarianDashboard = () => {
         reason: reason,
       });
 
-      // Send denial email to patron
       const emailParams = {
         user_email: reservation.userEmail,
+        room_name: reservation.room,
+        room_location: reservation.location,
+        booking_date: reservation.date,
+        booking_time: reservation.time,
         status: "Denied",
         reason: reason,
       };
 
       await emailjs.send(
         "service_p7qb2fi",
-        "template_fwti4vi",
+        "template_whfon5g",
         emailParams,
         "q6N2whZUsNxvfV7sr"
       );
