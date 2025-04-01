@@ -21,12 +21,16 @@ const PatronDashboard = () => {
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("09:00 - 10:00"); // Default time
+  const [selectedTime, setSelectedTime] = useState("09:00 - 10:00");
+  const [isRecurring, setIsRecurring] = useState(false);
+
+  const [issueModalOpen, setIssueModalOpen] = useState(false);
+  const [issueText, setIssueText] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
-        console.warn("No patron session found. Redirecting to login...");
+        alert("No patron session found. Redirecting to login...");
         navigate("/patron-login");
       } else {
         setUser(currentUser);
@@ -86,6 +90,7 @@ const PatronDashboard = () => {
     setSelectedRoom(room);
     setModalOpen(true);
     setSelectedDate("");
+    setIsRecurring(false);
   };
 
   const closeReservationModal = () => {
@@ -93,92 +98,40 @@ const PatronDashboard = () => {
     setSelectedRoom(null);
     setSelectedDate("");
     setSelectedTime("09:00 - 10:00");
+    setIsRecurring(false);
   };
 
-  const handleReserve = async () => {
-    if (!user) {
-      alert("You must be logged in to make a booking.");
-      return;
-    }
+  const openIssueModal = () => {
+    setIssueModalOpen(true);
+    setIssueText("");
+  };
 
-    if (!selectedRoom || !selectedDate || !selectedTime) {
-      alert("Please select a room, date, and time before booking.");
-      return;
-    }
+  const closeIssueModal = () => {
+    setIssueModalOpen(false);
+    setIssueText("");
+  };
 
-    const userEmail = user.email;
-    const today = new Date();
-    const minBookingDate = new Date(today);
-    minBookingDate.setDate(today.getDate() + 6);
-
-    const selectedDateObj = new Date(selectedDate);
-    if (selectedDateObj < minBookingDate) {
-      alert("You can only book a room 7 days or more in advance.");
+  const submitIssue = async () => {
+    if (!issueText.trim()) {
+      alert("Please enter a description of the issue.");
       return;
     }
 
     try {
-      const bookingRef = collection(db, "rooms", selectedRoom.id, "bookings");
-      const existingBookingsQuery = query(
-        bookingRef,
-        where("date", "==", selectedDate),
-        where("time", "==", selectedTime)
-      );
-      const existingBookingsSnapshot = await getDocs(existingBookingsQuery);
-
-      if (!existingBookingsSnapshot.empty) {
-        const wantsNotification = window.confirm(
-          "This time slot is already booked. Would you like to receive an email if it becomes available?"
-        );
-        if (wantsNotification) {
-          await addReminder(selectedRoom.id, selectedDate, selectedTime);
-          alert(
-            "You will be notified via email if this room becomes available."
-          );
-        }
-        return;
-      }
-
-      await addDoc(bookingRef, {
+      await addDoc(collection(db, "issues"), {
+        roomId: selectedRoom.id,
         roomName: selectedRoom.name,
         location: selectedRoom.location,
-        date: selectedDate,
-        time: selectedTime,
-        email: userEmail,
-        status: "Pending",
+        issue: issueText,
+        reportedBy: user.email,
+        timestamp: new Date().toISOString(),
       });
 
-      const emailParams = {
-        user_email: userEmail,
-        room_name: selectedRoom.name,
-        room_location: selectedRoom.location,
-        booking_date: selectedDate,
-        booking_time: selectedTime,
-        status: "Pending Approval",
-      };
-
-      emailjs
-        .send(
-          "service_p7qb2fi",
-          "template_whfon5g",
-          emailParams,
-          "q6N2whZUsNxvfV7sr"
-        )
-        .then(() =>
-          alert(
-            "Room reserved successfully! A confirmation email has been sent."
-          )
-        )
-        .catch(() =>
-          alert(
-            "Room reserved successfully, but failed to send confirmation email."
-          )
-        );
-
-      closeReservationModal();
+      alert("Issue reported successfully.");
+      closeIssueModal();
     } catch (error) {
-      console.error("Error reserving room:", error);
-      alert("Failed to reserve room. Please try again later.");
+      console.error("Error reporting issue:", error);
+      alert("Failed to submit the issue.");
     }
   };
 
@@ -186,10 +139,91 @@ const PatronDashboard = () => {
     try {
       const remindersRef = collection(db, "reminders");
       await addDoc(remindersRef, { roomId, email: user.email, date, time });
-      console.log("Reminder added successfully");
     } catch (error) {
       console.error("Error adding reminder:", error);
-      alert("Failed to set up a notification. Please try again.");
+    }
+  };
+
+  const handleReserve = async () => {
+    if (!user || !selectedRoom || !selectedDate || !selectedTime) {
+      alert("Please complete all required fields.");
+      return;
+    }
+
+    const userEmail = user.email;
+    const today = new Date();
+    const minBookingDate = new Date(today);
+    minBookingDate.setDate(today.getDate() + 6);
+    const selectedDateObj = new Date(selectedDate);
+
+    if (selectedDateObj < minBookingDate) {
+      alert("You can only book a room 7 days or more in advance.");
+      return;
+    }
+
+    try {
+      const bookingDates = isRecurring
+        ? Array.from({ length: 4 }, (_, i) => {
+            const newDate = new Date(selectedDateObj);
+            newDate.setDate(newDate.getDate() + i * 7);
+            return newDate.toISOString().split("T")[0];
+          })
+        : [selectedDate];
+
+      for (const bookingDate of bookingDates) {
+        const bookingRef = collection(db, "rooms", selectedRoom.id, "bookings");
+        const existingQuery = query(
+          bookingRef,
+          where("date", "==", bookingDate),
+          where("time", "==", selectedTime)
+        );
+        const existingSnapshot = await getDocs(existingQuery);
+
+        if (!existingSnapshot.empty) {
+          if (!isRecurring) {
+            const wantsNotification = window.confirm(
+              "This time slot is already booked. Would you like to receive an email if it becomes available?"
+            );
+            if (wantsNotification) {
+              await addReminder(selectedRoom.id, bookingDate, selectedTime);
+              alert("You will be notified if it becomes available.");
+            }
+            return;
+          } else {
+            alert(`Could not book ${bookingDate} because it is already taken.`);
+            continue;
+          }
+        }
+
+        await addDoc(bookingRef, {
+          roomName: selectedRoom.name,
+          location: selectedRoom.location,
+          date: bookingDate,
+          time: selectedTime,
+          email: userEmail,
+          status: "Pending",
+        });
+
+        await emailjs.send(
+          "service_p7qb2fi",
+          "template_whfon5g",
+          {
+            user_email: userEmail,
+            room_name: selectedRoom.name,
+            room_location: selectedRoom.location,
+            booking_date: bookingDate,
+            booking_time: selectedTime,
+            status: "Pending Approval",
+          },
+          "q6N2whZUsNxvfV7sr"
+        );
+      }
+
+      alert("Booking(s) submitted successfully!");
+      closeReservationModal();
+    } catch (error) {
+      console.error("Error reserving room:", error);
+      alert("Failed to reserve room.");
     }
   };
 
@@ -209,6 +243,7 @@ const PatronDashboard = () => {
       <div className="patron-dashboard-container">
         <div className="filter-sidebar">
           <h3>Filters</h3>
+
           <label>Location:</label>
           <select
             name="location"
@@ -222,7 +257,6 @@ const PatronDashboard = () => {
               </option>
             ))}
           </select>
-
           <label>Room Type:</label>
           <select
             name="type"
@@ -233,7 +267,6 @@ const PatronDashboard = () => {
             <option value="Study Room">Study Room</option>
             <option value="Meeting Room">Meeting Room</option>
           </select>
-
           <label>Equipment:</label>
           <div className="equipment-filter">
             {equipmentOptions.map((eq, index) => (
@@ -258,11 +291,7 @@ const PatronDashboard = () => {
           <div className="room-grid">
             {filteredRooms.length > 0 ? (
               filteredRooms.map((room) => (
-                <div
-                  key={room.id}
-                  className="room-card"
-                  onClick={() => setSelectedRoom(room)}
-                >
+                <div key={room.id} className="room-card">
                   <h3>{room.name}</h3>
                   <p>
                     <b>Capacity:</b> {room.capacity} people
@@ -289,62 +318,61 @@ const PatronDashboard = () => {
             )}
           </div>
         </div>
+      </div>
 
-        {/* Room Reservation Modal */}
-        {modalOpen && (
-          <div className="modal-overlay" onClick={closeReservationModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <button className="close-btn" onClick={closeReservationModal}>
-                &times;
-              </button>
-              <h3>{selectedRoom.name}</h3>
-              <p>{selectedRoom.location}</p>
-              <p>{selectedRoom.capacity} people</p>
-              <p>Available Equipment: {selectedRoom.equipment.join(", ")}</p>
-              <form>
-                <label>Select Date:</label>
+      {/* Reservation Modal */}
+      {modalOpen && selectedRoom && (
+        <div className="modal-overlay" onClick={closeReservationModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={closeReservationModal}>
+              &times;
+            </button>
+            <h3>{selectedRoom.name}</h3>
+            <p>{selectedRoom.location}</p>
+            <p>{selectedRoom.capacity} people</p>
+            <p>Available Equipment: {selectedRoom.equipment.join(", ")}</p>
+
+            <form>
+              <label>Select Date:</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                min={
+                  new Date(new Date().setDate(new Date().getDate() + 7))
+                    .toISOString()
+                    .split("T")[0]
+                }
+                required
+              />
+              <label>Select Time:</label>
+              <select
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+                required
+              >
+                {[...Array(8)].map((_, i) => {
+                  const hour = 9 + i;
+                  const start = `${String(hour).padStart(2, "0")}:00`;
+                  const end = `${String(hour + 1).padStart(2, "0")}:00`;
+                  return (
+                    <option key={`${start}-${end}`} value={`${start}-${end}`}>
+                      {start} - {end}
+                    </option>
+                  );
+                })}
+              </select>
+
+              <label>
                 <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  min={
-                    new Date(new Date().setDate(new Date().getDate() + 7))
-                      .toISOString()
-                      .split("T")[0]
-                  } // 7 days from today
-                  required
-                />
-                <label>Select Time:</label>
-                <select
-                  value={selectedTime}
-                  onChange={(e) => {
-                    setSelectedTime(e.target.value); // Update state with the selected time
-                  }}
-                  required
-                >
-                  {[...Array(8)].map((_, i) => {
-                    const hour = 9 + i; // Starting from 9:00
-                    const formattedStart = `${String(hour).padStart(
-                      2,
-                      "0"
-                    )}:00`; // Format hour like 09:00
-                    const nextHour = hour + 1;
-                    const formattedEnd = `${String(nextHour).padStart(
-                      2,
-                      "0"
-                    )}:00`; // Format next hour similarly
+                  type="checkbox"
+                  checked={isRecurring}
+                  onChange={(e) => setIsRecurring(e.target.checked)}
+                />{" "}
+                Repeat this reservation weekly for 4 weeks
+              </label>
 
-                    return (
-                      <option
-                        key={`${formattedStart}-${formattedEnd}`}
-                        value={`${formattedStart}-${formattedEnd}`}
-                      >
-                        {`${formattedStart} - ${formattedEnd}`}{" "}
-                        {/* Display time range */}
-                      </option>
-                    );
-                  })}
-                </select>
+              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
                 <button
                   type="button"
                   className="reserve-btn"
@@ -352,11 +380,40 @@ const PatronDashboard = () => {
                 >
                   Reserve Now
                 </button>
-              </form>
-            </div>
+                <button
+                  type="button"
+                  className="reserve-btn"
+                  onClick={openIssueModal}
+                >
+                  Report an Issue
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Report Issue Modal */}
+      {issueModalOpen && (
+        <div className="modal-overlay" onClick={closeIssueModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={closeIssueModal}>
+              &times;
+            </button>
+            <h3>Report an Issue - {selectedRoom?.name}</h3>
+            <textarea
+              rows="5"
+              placeholder="Describe the issue with this room..."
+              value={issueText}
+              onChange={(e) => setIssueText(e.target.value)}
+              style={{ width: "100%", padding: "10px", marginBottom: "10px" }}
+            />
+            <button className="reserve-btn" onClick={submitIssue}>
+              Submit Issue
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };

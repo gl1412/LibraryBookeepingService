@@ -7,6 +7,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  updateDoc,
 } from "firebase/firestore";
 import emailjs from "emailjs-com";
 import "./PatronProfile.scss";
@@ -16,6 +17,25 @@ const PatronProfile = () => {
   const [upcomingBookings, setUpcomingBookings] = useState([]);
   const [pastBookings, setPastBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Modify Booking State
+  const [modifyingBooking, setModifyingBooking] = useState(null);
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const [reservedTimes, setReservedTimes] = useState([]);
+  const [timeError, setTimeError] = useState("");
+
+  // All time slots
+  const timeSlots = [
+    "09:00 - 10:00",
+    "10:00 - 11:00",
+    "11:00 - 12:00",
+    "12:00 - 13:00",
+    "13:00 - 14:00",
+    "14:00 - 15:00",
+    "15:00 - 16:00",
+    "16:00 - 17:00",
+  ];
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -43,18 +63,14 @@ const PatronProfile = () => {
             roomId: room.id,
             roomName: room.name,
             location: room.location,
-            status: doc.data().status, // Include booking status
+            status: doc.data().status,
             ...doc.data(),
           }));
         });
 
         const allBookings = (await Promise.all(bookingPromises)).flat();
-
-        // Separate bookings into upcoming and past based on date
-        setUpcomingBookings(
-          allBookings.filter((booking) => booking.date >= today)
-        );
-        setPastBookings(allBookings.filter((booking) => booking.date < today));
+        setUpcomingBookings(allBookings.filter((b) => b.date >= today));
+        setPastBookings(allBookings.filter((b) => b.date < today));
       } catch (error) {
         console.error("Error fetching bookings:", error);
       } finally {
@@ -70,11 +86,8 @@ const PatronProfile = () => {
       return;
 
     try {
-      // Delete booking from Firestore
-      const bookingRef = doc(db, `rooms/${roomId}/bookings/${bookingId}`);
-      await deleteDoc(bookingRef);
+      await deleteDoc(doc(db, `rooms/${roomId}/bookings/${bookingId}`));
 
-      // Send email to the user who cancelled
       const emailParams = {
         user_email: bookingData.email,
         room_name: bookingData.roomName,
@@ -91,45 +104,31 @@ const PatronProfile = () => {
         "q6N2whZUsNxvfV7sr"
       );
 
-      // Fetch reminders for this room (matching roomId, date, and time)
       const remindersQuery = query(
         collection(db, "reminders"),
         where("roomId", "==", roomId),
         where("date", "==", bookingData.date),
         where("time", "==", bookingData.time)
       );
-      const remindersSnapshot = await getDocs(remindersQuery);
 
-      if (!remindersSnapshot.empty) {
-        // Send email notifications to each user who set a reminder
-        remindersSnapshot.forEach(async (reminderDoc) => {
-          const reminder = reminderDoc.data();
-          const notifyEmailParams = {
-            user_email: reminder.email,
+      const snapshot = await getDocs(remindersQuery);
+      snapshot.forEach(async (docSnap) => {
+        await emailjs.send(
+          "service_p7qb2fi",
+          "template_fwti4vi",
+          {
+            user_email: docSnap.data().email,
             room_name: bookingData.roomName,
             room_location: bookingData.location,
             booking_date: bookingData.date,
             booking_time: bookingData.time,
-          };
+          },
+          "q6N2whZUsNxvfV7sr"
+        );
+        await deleteDoc(doc(db, "reminders", docSnap.id));
+      });
 
-          // Send notification email to each user
-          await emailjs.send(
-            "service_p7qb2fi",
-            "template_fwti4vi",
-            notifyEmailParams,
-            "q6N2whZUsNxvfV7sr"
-          );
-
-          // After notification, delete this reminder from the notifications collection
-          const reminderRef = doc(db, "reminders", reminderDoc.id);
-          await deleteDoc(reminderRef); // Remove the reminder record
-        });
-      }
-
-      // Remove the cancelled booking from state
-      setUpcomingBookings((prevBookings) =>
-        prevBookings.filter((booking) => booking.id !== bookingId)
-      );
+      setUpcomingBookings((prev) => prev.filter((b) => b.id !== bookingId));
 
       alert("Booking cancelled successfully.");
     } catch (error) {
@@ -137,6 +136,51 @@ const PatronProfile = () => {
       alert("Failed to cancel the booking. Please try again.");
     }
   };
+
+  const handleModifySubmit = async (e) => {
+    e.preventDefault();
+    if (!modifyingBooking || !newDate || !newTime) return;
+
+    try {
+      const bookingRef = doc(
+        db,
+        `rooms/${modifyingBooking.roomId}/bookings/${modifyingBooking.id}`
+      );
+      await updateDoc(bookingRef, { date: newDate, time: newTime });
+
+      setUpcomingBookings((prev) =>
+        prev.map((b) =>
+          b.id === modifyingBooking.id
+            ? { ...b, date: newDate, time: newTime }
+            : b
+        )
+      );
+
+      setModifyingBooking(null);
+      alert("Booking updated successfully.");
+    } catch (error) {
+      console.error("Error updating booking:", error);
+      alert("Failed to update the booking.");
+    }
+  };
+
+  const fetchReservedTimes = async (roomId, date) => {
+    if (!roomId || !date) return;
+
+    const bookingsRef = collection(db, `rooms/${roomId}/bookings`);
+    const snapshot = await getDocs(
+      query(bookingsRef, where("date", "==", date))
+    );
+
+    const times = snapshot.docs.map((doc) => doc.data().time);
+    setReservedTimes(times);
+  };
+
+  useEffect(() => {
+    if (modifyingBooking && newDate) {
+      fetchReservedTimes(modifyingBooking.roomId, newDate);
+    }
+  }, [modifyingBooking, newDate]);
 
   return (
     <>
@@ -165,14 +209,26 @@ const PatronProfile = () => {
                     <p>
                       <strong>Status:</strong> {booking.status}
                     </p>
-                    <button
-                      className="cancel-btn"
-                      onClick={() =>
-                        handleCancelBooking(booking.id, booking.roomId, booking)
-                      }
-                    >
-                      Cancel Booking
-                    </button>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <button
+                        className="cancel-btn"
+                        onClick={() => setModifyingBooking(booking)}
+                      >
+                        Modify Booking
+                      </button>
+                      <button
+                        className="cancel-btn"
+                        onClick={() =>
+                          handleCancelBooking(
+                            booking.id,
+                            booking.roomId,
+                            booking
+                          )
+                        }
+                      >
+                        Cancel Booking
+                      </button>
+                    </div>
                   </div>
                 ))
               ) : (
@@ -204,6 +260,62 @@ const PatronProfile = () => {
           </>
         )}
       </div>
+
+      {modifyingBooking && (
+        <div
+          className="modal-overlay"
+          onClick={() => setModifyingBooking(null)}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="close-btn"
+              onClick={() => setModifyingBooking(null)}
+            >
+              ✖
+            </button>
+            <h2>Modify Booking</h2>
+            <form onSubmit={handleModifySubmit}>
+              <label>New Date:</label>
+              <input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                required
+              />
+              <label>New Time:</label>
+              <select
+                value={newTime}
+                onChange={(e) => {
+                  const selected = e.target.value;
+                  if (reservedTimes.includes(selected)) {
+                    setTimeError("This time slot is unavailable.");
+                    setNewTime("");
+                  } else {
+                    setTimeError("");
+                    setNewTime(selected);
+                  }
+                }}
+                required
+              >
+                <option value="">Select a time</option>
+                {timeSlots.map((slot) => (
+                  <option
+                    key={slot}
+                    value={slot}
+                    disabled={reservedTimes.includes(slot)}
+                  >
+                    {slot}
+                  </option>
+                ))}
+              </select>
+              {timeError && <p className="error-text">{timeError}</p>}
+              <button type="submit" className="cancel-btn">
+                Save Changes
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };
